@@ -7,6 +7,10 @@ name: Notify Discord on Release
 on:
   release:
     types: [published]
+  # Supaya bisa dites manual dari tab Actions ("Run workflow") tanpa perlu
+  # bikin rilis baru sungguhan — dipakai payload contoh di bawah kalau tidak
+  # ada context.payload.release (mis. dipicu manual, bukan dari event release).
+  workflow_dispatch: {}
 
 jobs:
   notify:
@@ -18,7 +22,11 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
           script: |
-            const release = context.payload.release;
+            const release = context.payload.release || {
+              tag_name: "v0.0.0-test",
+              html_url: "https://github.com/gwetastore-a11y/gweta-releases",
+              body: "✅ **Fitur Ditambahkan**\n• Ini pesan tes manual dari tombol Run workflow.",
+            };
             const body = (release.body || "").slice(0, 3800);
             // Tulis catatan rilis di GitHub pakai format ini supaya tampil rapi di
             // Discord: "✅ Fitur Ditambahkan", "🛠️ Diperbaiki", "🗑️ Dihapus", tiap
