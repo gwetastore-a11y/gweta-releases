@@ -31,7 +31,17 @@ jobs:
               footer: { text: "Gweta Store" },
             };
 
-            const res = await fetch(process.env.DISCORD_WEBHOOK_URL, {
+            // .trim() — secret dari GitHub UI kadang kebawa spasi/baris baru tak
+            // kelihatan waktu di-paste, bikin new URL() di dalam fetch() gagal
+            // dengan "Invalid URL" walau nilainya kelihatan benar (2026-07-30,
+            // gagal di rilis v1.0.61, root cause ini).
+            const webhookUrl = (process.env.DISCORD_WEBHOOK_URL || "").trim();
+            if (!webhookUrl) {
+              core.setFailed("DISCORD_WEBHOOK_URL kosong — cek repo secret di Settings > Secrets and variables > Actions.");
+              return;
+            }
+
+            const res = await fetch(webhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ username: "Gweta Store Updates", embeds: [embed] }),
