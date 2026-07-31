@@ -44,8 +44,24 @@ jobs:
             // dengan "Invalid URL" walau nilainya kelihatan benar (2026-07-30,
             // gagal di rilis v1.0.61, root cause ini).
             const webhookUrl = (process.env.DISCORD_WEBHOOK_URL || "").trim();
+
+            // Diagnostik AMAN (tidak pernah nge-print isi secret, cuma metadata
+            // tentang bentuknya) — dipasang 2026-07-31 setelah .trim() saja
+            // ternyata tidak cukup menyelesaikan error "Failed to parse URL" di
+            // v1.0.62, supaya bisa didiagnosis dari log tanpa membocorkan secret.
+            console.log(`[debug] panjang webhookUrl setelah trim: ${webhookUrl.length}`);
+            console.log(`[debug] diawali prefix webhook Discord yang benar: ${webhookUrl.startsWith("https://discord.com/api/webhooks/") || webhookUrl.startsWith("https://discordapp.com/api/webhooks/")}`);
+            console.log(`[debug] masih mengandung whitespace di tengah: ${/\s/.test(webhookUrl)}`);
+
             if (!webhookUrl) {
               core.setFailed("DISCORD_WEBHOOK_URL kosong — cek repo secret di Settings > Secrets and variables > Actions.");
+              return;
+            }
+
+            try {
+              new URL(webhookUrl);
+            } catch {
+              core.setFailed(`DISCORD_WEBHOOK_URL bukan URL yang valid (panjang=${webhookUrl.length}). Kemungkinan salah salin dari Discord (kebawa tanda kutip/teks lain, atau tidak lengkap) — hapus secret ini di Settings > Secrets and variables > Actions, lalu buat ulang dengan menyalin ulang URL webhook langsung dari Discord (Server Settings > Integrations > Webhooks > Copy Webhook URL).`);
               return;
             }
 
